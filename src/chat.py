@@ -1,12 +1,17 @@
 from logging.config import dictConfig
+from platform import system
 import logging
 import twitter
 import yaml
 import sys
+import os
 
+
+# Using this variable ensures paths are cross platform
+slash = "\\" if system() is "Windows" else "/"
 
 # Configure logger
-dictConfig(yaml.safe_load(open("config.yaml")))
+dictConfig(yaml.safe_load(open(os.path.abspath("..") + slash + "config.yaml")))
 
 
 class TwitterTerminalChat:
@@ -39,7 +44,7 @@ class TwitterTerminalChat:
         self.logger.info("Successfully initialised TwitterTerminalChat()")
 
     def read_account(self):
-        with open("account.txt", "r") as f:
+        with open(os.path.abspath("..") + slash + "account.txt", "r") as f:
             lines = f.read().splitlines()
             if len(lines) == 4:
                 return lines
