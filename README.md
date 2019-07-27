@@ -1,1 +1,1 @@
-# twitter_terminal_messaging
+# twitter_terminal_chat
