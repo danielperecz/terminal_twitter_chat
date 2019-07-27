@@ -8,3 +8,11 @@ The class `TerminalTwitterChat` reads user information from `accounts.txt` and i
 
 ### What's next:
 Using the `Api` object I will implement the Direct Message feature - assuming my Twitter developer application gets approved.
+
+## Dependencies (will be automated)
+```
+twitter
+python-twitter
+yaml
+pyyaml
+```
