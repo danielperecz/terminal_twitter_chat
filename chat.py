@@ -28,8 +28,9 @@ class TwitterTerminalChat:
         self.access_token_secret = account[3]
 
         # Initialize an Api object
-        self.api = twitter.Api(self.consumer_key, self.consumer_secret, self.access_token_key, self.access_token_secret)
         try:
+            self.api = twitter.Api(self.consumer_key, self.consumer_secret,
+                                   self.access_token_key, self.access_token_secret)
             self.api.VerifyCredentials()
         except:
             self.logger.error("Invalid key(s) and or token(s) in account.txt")
