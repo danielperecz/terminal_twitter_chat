@@ -1,14 +1,25 @@
+from logging.config import dictConfig
+import logging
 import twitter
+import yaml
 import sys
+
+
+# Configure logger
+dictConfig(yaml.safe_load(open("config.yaml")))
 
 
 class TwitterTerminalChat:
 
+    logger = logging.getLogger("chat.py")
+
     def __init__(self):
+        self.logger.info("Initialising TwitterTerminalChat()")
+
         # Get keys & tokens from text file
         account = self.read_account()
         if account is False:
-            print("Invalid account.txt")
+            self.logger.error("Invalid account.txt")
             sys.exit()
 
         self.consumer_key = account[0]
@@ -21,8 +32,10 @@ class TwitterTerminalChat:
         try:
             self.api.VerifyCredentials()
         except:
-            print("Invalid key(s) and or token(s) in account.txt")
+            self.logger.error("Invalid key(s) and or token(s) in account.txt")
             sys.exit()
+
+        self.logger.info("Successfully initialised TwitterTerminalChat()")
 
     def read_account(self):
         with open("account.txt", "r") as f:
