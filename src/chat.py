@@ -48,6 +48,7 @@ class TwitterTerminalChat:
             sys.exit()
 
         self.my_id = self.api.verify_credentials()._json["id"]
+        self.open_chat()
         self.logger.info("Successfully initialised TwitterTerminalChat()")
 
     def read_account(self):
@@ -59,14 +60,19 @@ class TwitterTerminalChat:
         return False
 
     def open_chat(self):
-        """This is the actual method responsible for chatting. User is prompted for a recipient username and then they
-        may start chatting."""
+        """This method is responsible for the actual chatting feature. User is prompted for a recipient username and
+        then they may start chatting."""
 
         # Prompt user to enter a recipient username
+        recipient_username = input("\nOpen chat with: ")
+        if recipient_username.lower() == "exit":
+            sys.exit()
+
+        # Get recipient's ID
         try:
-            recipient_id = self.api.get_user(screen_name=input("Open chat with: "))._json["id"]
+            recipient_id = self.api.get_user(screen_name=recipient_username)._json["id"]
         except:
-            # User not found. Call open_chat() again to prompt user for new user
+            # User not found. Call open_chat() again to prompt user for new username
             self.logger.error("User not found")
             self.open_chat()
 
@@ -81,7 +87,7 @@ class TwitterTerminalChat:
         sys.exit()
 
 
-TwitterTerminalChat().open_chat()
+TwitterTerminalChat()
 
 """
 Notes for myself:
