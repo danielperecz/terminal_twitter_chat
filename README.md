@@ -9,6 +9,12 @@ The class `TerminalTwitterChat` reads user information from `accounts.txt` and i
 ### What's next:
 Using the `Api` object I will implement the Direct Message feature.
 
+## Currently working on
+* Implementing a way to get new messages received. The API can do this but it's rate limited so I've decided to use Selenium's Chrome object for detecting new messages
+* At the moment the script logs in to Twitter and goes to specific chat window
+* Next is the implementation of detecting new messages
+* Will have to use multithreading because this 'listener' method will have to listen to new messages while at the same time the user should have the ability to send a new message
+
 ## Dependencies (will be automated)
 ```
 tweepy
