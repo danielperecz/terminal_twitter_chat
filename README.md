@@ -17,6 +17,7 @@ Using the `Api` object I will implement the Direct Message feature.
 
 ## Dependencies (will be automated)
 ```
+selenium
 tweepy
 yaml
 pyyaml
