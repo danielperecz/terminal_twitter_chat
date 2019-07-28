@@ -53,7 +53,7 @@ class TwitterTerminalChat:
 
     def read_account(self):
         """Method reads account.txt and returns its contents as a list of lines."""
-        with open(os.path.abspath("..") + slash + "account_.txt", "r") as f:
+        with open(os.path.abspath("..") + slash + "account.txt", "r") as f:
             lines = f.read().splitlines()
             if len(lines) == 4:
                 return lines
