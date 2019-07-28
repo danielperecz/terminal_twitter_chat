@@ -11,8 +11,7 @@ Using the `Api` object I will implement the Direct Message feature.
 
 ## Dependencies (will be automated)
 ```
-twitter
-python-twitter
+tweepy
 yaml
 pyyaml
 ```
