@@ -1,9 +1,9 @@
 from logging.config import dictConfig
-from selenium import webdriver
 from platform import system
+import threading
 import logging
 import tweepy
-import time
+import queue
 import yaml
 import sys
 import os
@@ -19,9 +19,11 @@ dictConfig(yaml.safe_load(open(os.path.abspath("..") + slash + "config.yaml")))
 class TwitterTerminalChat:
 
     logger = logging.getLogger("chat.py")
-
-    api = None
-    my_id = None
+    previous_messages = []
+    refresh_time = 150000000
+    message = None
+    recipient_id = None
+    recipient_nickname = None
 
     def __init__(self):
         self.logger.info("Initialising TwitterTerminalChat()")
@@ -37,8 +39,6 @@ class TwitterTerminalChat:
         self.consumer_secret = account[1]
         self.access_token_key = account[2]
         self.access_token_secret = account[3]
-        self.twitter_login = account[4]
-        self.twitter_password = account[5]
 
         # Authenticate user, setup api, and verify whether successful
         try:
@@ -51,53 +51,37 @@ class TwitterTerminalChat:
             self.logger.error("Invalid key(s) and or token(s) in account.txt")
             sys.exit()
 
-        # Initialise ChromeDriver and point it to its PATH
-        try:
-            self.driver = webdriver.Chrome(executable_path=[cd_path for cd_path in os.environ.get("PATH").split(
-                ";" if system() is "Windows" else ":") if "chromedriver" in cd_path][0])
-        except IndexError:
-            # If chromedriver is not in PATH, an exception occurs
-            self.logger.error("chromedriver not in PATH")
-            sys.exit()
-
         self.my_id = self.api.verify_credentials()._json["id"]
         self.logger.info("Successfully initialised TwitterTerminalChat()")
         self.open_chat()
 
     def read_account(self):
         """Method reads account.txt and returns its contents as a list of lines."""
-        with open(os.path.abspath("..") + slash + "account_.txt", "r") as f:
+        with open(os.path.abspath("..") + slash + "account.txt", "r") as f:
             lines = f.read().splitlines()
-            if len(lines) == 6:
+            if len(lines) == 4:
                 return lines
         return False
 
     def message_listener(self):
-        self.driver.get("https://twitter.com/")
+        """Check for new messages and print them to terminal."""
+        self.recipient_nickname = self.api.get_user(id=self.recipient_id)._json["name"]
 
-        # Enter login details and login
-        self.driver.find_element_by_xpath("//*[@id='doc']/div/div[1]/div[1]/div[1]/form/div[1]/input").send_keys(self.twitter_login)
-        self.driver.find_element_by_xpath("//*[@id='doc']/div/div[1]/div[1]/div[1]/form/div[2]/input").send_keys(self.twitter_password)
-        self.driver.find_element_by_xpath("//*[@id='doc']/div/div[1]/div[1]/div[1]/form/input[1]").click()
-
-        # Go to chat window. URL is composed of: twitter.com/messages/recipient_id-your_id
-        # Example: https://twitter.com/messages/48964561550-90045433
-        chat_url = "https://twitter.com/messages/" + str(self.recipient_id) + "-" + str(self.my_id)
-        self.driver.get(chat_url)
-
-        if self.driver.current_url != chat_url:
-            self.logger.error("Incorrect Twitter login details. Check account.txt")
-            sys.exit()
-
-        time.sleep(360)
-
+        latest_messages = self.api.list_direct_messages()
+        latest_messages_indexes = [i for i in range(0, len(latest_messages)) if
+                                   int(latest_messages[i].message_create["sender_id"]) == self.recipient_id][::-1]
+        sys.stdout.flush()
+        for i in latest_messages_indexes:
+            if latest_messages[i].message_create["message_data"]["text"] not in self.previous_messages:
+                print(">>> " + self.recipient_nickname + ": " + latest_messages[i].message_create["message_data"]["text"])
+                self.previous_messages.append(latest_messages[i].message_create["message_data"]["text"])
 
     def open_chat(self):
         """This method is responsible for the actual chatting feature. User is prompted for a recipient username and
         then they may start chatting."""
 
         # Prompt user to enter a recipient username
-        recipient_username = input("\nOpen chat with: ")
+        recipient_username = input("\nOpen chat with: @")
         if recipient_username.lower() == "exit":
             sys.exit()
 
@@ -110,23 +94,34 @@ class TwitterTerminalChat:
             self.open_chat()
 
         self.message_listener()
-        message = input(">>> ")
 
-        # Keep prompting user for new input until "exit" is entered
-        while message.lower() != "exit":
-            self.api.send_direct_message(recipient_id=self.recipient_id, text=message)  # Send message
-            message = input(">>> ")                                                     # Prompt user for new message
+        input_queue = queue.Queue()
+        input_thread = threading.Thread(target=self.wait_for_input_and_send, args=(input_queue,))
+        input_thread.daemon = True
+        input_thread.start()
+
+        i = 0
+        while True:
+            if not input_queue.empty():
+                self.previous_messages.append(input_queue.get())
+            else:
+                if i % self.refresh_time == 0:
+                    self.message_listener()
+            i += 1
 
         # "exit" has been entered therefore stop code execution
         sys.exit()
 
+    def wait_for_input_and_send(self, input_queue):
+        while True:
+            sys.stdout.write(">>> ")
+            self.message = sys.stdin.readline().strip()
+
+            if self.message.lower() == "exit":
+                sys.exit()
+
+            self.api.send_direct_message(recipient_id=self.recipient_id, text=self.message)     # Send message
+            input_queue.put(self.message)
+
 
 TwitterTerminalChat()
-
-"""
-Notes for myself:
-listing direct messages is rate limited
-
-latest_message = self.api.list_direct_messages()[0].message_create["message_data"]["text"]
-sender_id = self.api.list_direct_messages()[0].message_create["sender_id"]
-"""
