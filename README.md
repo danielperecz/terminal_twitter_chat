@@ -4,21 +4,21 @@ Be able to chat with anyone via a terminal on any Operating System.
 
 ## How it works
 ### So far:
-The class `TwitterTerminalChat` reads user information from `accounts.txt` and its `__init__` method initialises a Twitter `Api` object using this information.
+* The class `TwitterTerminalChat` reads user information from `accounts.txt` and its `__init__` method initialises a Twitter `Api` object using this information.
+* 2 way communication is now possible but it takes a long time to get an updated list of new direct messages (around 20 seconds). This seems to be a limitation of the API itself.
 
 ### What's next:
-Using the `Api` object I will implement the Direct Message feature.
+* Improving the communication speed
 
-## Currently working on
-* Implementing a way to get new messages received. The API can do this but it's rate limited so I've decided to use Selenium's Chrome object for detecting new messages
-* At the moment the script logs in to Twitter and goes to specific chat window
-* Next is the implementation of detecting new messages
-* Will have to use multithreading because this 'listener' method will have to listen to new messages while at the same time the user should have the ability to send a new message
-
-## Dependencies (will be automated)
+## Current imports (will be automated)
 ```
-selenium
-tweepy
-yaml
-pyyaml
+from logging.config import dictConfig
+from platform import system
+import threading
+import logging
+import tweepy
+import queue
+import yaml
+import sys
+import os
 ```
