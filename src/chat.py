@@ -24,6 +24,7 @@ class TwitterTerminalChat:
     message = None
     recipient_id = None
     recipient_nickname = None
+    first_message_listener_call = True
 
     def __init__(self):
         self.logger.info("Initialising TwitterTerminalChat()")
@@ -57,7 +58,7 @@ class TwitterTerminalChat:
 
     def read_account(self):
         """Method reads account.txt and returns its contents as a list of lines."""
-        with open(os.path.abspath("..") + slash + "account.txt", "r") as f:
+        with open(os.path.abspath("..") + slash + "account_.txt", "r") as f:
             lines = f.read().splitlines()
             if len(lines) == 4:
                 return lines
@@ -70,11 +71,30 @@ class TwitterTerminalChat:
         latest_messages = self.api.list_direct_messages()
         latest_messages_indexes = [i for i in range(0, len(latest_messages)) if
                                    int(latest_messages[i].message_create["sender_id"]) == self.recipient_id][::-1]
-        sys.stdout.flush()
+        x = len(self.previous_messages)
+        first_line = True
         for i in latest_messages_indexes:
-            if latest_messages[i].message_create["message_data"]["text"] not in self.previous_messages:
-                print(">>> " + self.recipient_nickname + ": " + latest_messages[i].message_create["message_data"]["text"])
+            if self.first_message_listener_call:
+                j = 0
+                while j < len(latest_messages_indexes):
+                    self.previous_messages.append(latest_messages[latest_messages_indexes[j]].message_create["message_data"]["text"])
+                    j += 1
+                sys.stdout.write(">>> " + self.recipient_nickname + ": " + latest_messages[latest_messages_indexes[-1]].message_create["message_data"]["text"] + "\n")
+                self.first_message_listener_call = False
+                return
+
+            elif latest_messages[i].message_create["message_data"]["text"] not in self.previous_messages:
+                if first_line:
+                    sys.stdout.write(self.recipient_nickname + ": " + latest_messages[i].message_create["message_data"]["text"] + "\n")
+                    first_line = False
+                else:
+                    sys.stdout.write(">>> " + self.recipient_nickname + ": " + latest_messages[i].message_create["message_data"]["text"] + "\n")
                 self.previous_messages.append(latest_messages[i].message_create["message_data"]["text"])
+
+        # If new messages have been received, they are written to terminal, but at the end a new blank line is started.
+        # So instead of seeing ">>> ", the user only sees an empty line. This if statement fixes that problem.
+        if x != len(self.previous_messages):
+            sys.stdout.write(">>> ")
 
     def open_chat(self):
         """This method is responsible for the actual chatting feature. User is prompted for a recipient username and
@@ -103,14 +123,13 @@ class TwitterTerminalChat:
         i = 0
         while True:
             if not input_queue.empty():
+                if self.message == "exit":
+                    sys.exit()
                 self.previous_messages.append(input_queue.get())
             else:
                 if i % self.refresh_time == 0:
                     self.message_listener()
             i += 1
-
-        # "exit" has been entered therefore stop code execution
-        sys.exit()
 
     def wait_for_input_and_send(self, input_queue):
         while True:
@@ -118,7 +137,7 @@ class TwitterTerminalChat:
             self.message = sys.stdin.readline().strip()
 
             if self.message.lower() == "exit":
-                sys.exit()
+                input_queue.put(self.message.lower())
 
             self.api.send_direct_message(recipient_id=self.recipient_id, text=self.message)     # Send message
             input_queue.put(self.message)
