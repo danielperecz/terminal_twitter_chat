@@ -11,7 +11,7 @@ Be able to chat with anyone via a terminal on any Operating System.
 * Improving the communication speed
 
 ## Current imports (will be automated)
-```
+```python
 from logging.config import dictConfig
 from platform import system
 import threading
