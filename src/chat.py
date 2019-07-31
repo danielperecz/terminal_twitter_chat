@@ -20,14 +20,15 @@ class TwitterTerminalChat:
 
     logger = logging.getLogger("chat.py")
     previous_messages = []
-    refresh_time = 150000000
+    cpu_wait = 150000000
     message = None
     recipient_id = None
     recipient_nickname = None
     first_message_listener_call = True
 
-    def __init__(self):
+    def __init__(self, account_txt_path=None):
         self.logger.info("Initialising TwitterTerminalChat()")
+        self.account_txt_path = account_txt_path
 
         # Get keys & tokens from text file
         account = self.read_account()
@@ -54,11 +55,12 @@ class TwitterTerminalChat:
 
         self.my_id = self.api.verify_credentials()._json["id"]
         self.logger.info("Successfully initialised TwitterTerminalChat()")
-        self.open_chat()
 
     def read_account(self):
         """Method reads account.txt and returns its contents as a list of lines."""
-        with open(os.path.abspath("..") + slash + "account_.txt", "r") as f:
+        path = self.account_txt_path if self.account_txt_path is not None \
+            else os.path.abspath("..") + slash + "account_.txt"
+        with open(path, "r") as f:
             lines = f.read().splitlines()
             if len(lines) == 4:
                 return lines
@@ -127,7 +129,7 @@ class TwitterTerminalChat:
                     sys.exit()
                 self.previous_messages.append(input_queue.get())
             else:
-                if i % self.refresh_time == 0:
+                if i % self.cpu_wait == 0:
                     self.message_listener()
             i += 1
 
@@ -143,4 +145,5 @@ class TwitterTerminalChat:
             input_queue.put(self.message)
 
 
-TwitterTerminalChat()
+if __name__ == "__main__":
+    TwitterTerminalChat().open_chat()
