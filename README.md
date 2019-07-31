@@ -4,7 +4,7 @@ Be able to chat with anyone via a terminal on any Operating System.
 
 ## Progress
 ### So far:
-* The class `TwitterTerminalChat` reads user information from `accounts.txt` and its `__init__` method initialises a tweepy `API` object using this information.
+* The class `TwitterTerminalChat` reads user information from `account.txt` and its `__init__` method initialises a tweepy `API` object using this information.
 * 2 way communication is now possible but it takes a long time to get an updated list of new direct messages (60+ seconds). This seems to be a limitation of the API itself. Currently I'm retrieving direct messages using: `tweepy.API().list_direct_messages()`.
 
 ### What's next:
