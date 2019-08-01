@@ -39,13 +39,13 @@ class TwitterTerminalChat:
         # Initialise keys, tokens & twitter login details from text file
         self.consumer_key = account[0]
         self.consumer_secret = account[1]
-        self.access_token_key = account[2]
+        self.access_token = account[2]
         self.access_token_secret = account[3]
 
         # Authenticate user, setup api, and verify whether successful
         try:
             self.auth = tweepy.OAuthHandler(self.consumer_key, self.consumer_secret)
-            self.auth.set_access_token(self.access_token_key, self.access_token_secret)
+            self.auth.set_access_token(self.access_token, self.access_token_secret)
             self.api = tweepy.API(self.auth)
             self.api.verify_credentials()
         except:
@@ -58,8 +58,7 @@ class TwitterTerminalChat:
 
     def read_account(self):
         """Method reads account.txt and returns its contents as a list of lines."""
-        path = self.account_txt_path if self.account_txt_path is not None \
-            else os.path.abspath("..") + slash + "account_.txt"
+        path = self.account_txt_path if self.account_txt_path is not None else os.path.abspath("..") + slash + "account_.txt"
         with open(path, "r") as f:
             lines = f.read().splitlines()
             if len(lines) == 4:
@@ -115,8 +114,10 @@ class TwitterTerminalChat:
             self.logger.error("User not found")
             self.open_chat()
 
+        # Call message_listener once to check for last message from the user you want to chat with
         self.message_listener()
 
+        # Create a queue and a thread
         input_queue = queue.Queue()
         input_thread = threading.Thread(target=self.wait_for_input_and_send, args=(input_queue,))
         input_thread.daemon = True
@@ -129,19 +130,25 @@ class TwitterTerminalChat:
                     sys.exit()
                 self.previous_messages.append(input_queue.get())
             else:
+                # Check for new received messages every number of iterations specified by the cpu_wait variable
                 if i % self.cpu_wait == 0:
                     self.message_listener()
             i += 1
 
     def wait_for_input_and_send(self, input_queue):
+        """Runs simultaneously with the while loop in open_chat(). Method waits for user input and adds it to the queue,
+        so it can then be used by open_chat()."""
         while True:
             sys.stdout.write(">>> ")
             self.message = sys.stdin.readline().strip()
 
+            # If user wants to exit, we still need to add the string to the queue so the thread can be stopped from
+            # the open_chat() method.
             if self.message.lower() == "exit":
                 input_queue.put(self.message.lower())
 
-            self.api.send_direct_message(recipient_id=self.recipient_id, text=self.message)     # Send message
+            # Send direct message, and add it to queue so it can then be used outside of the thread.
+            self.api.send_direct_message(recipient_id=self.recipient_id, text=self.message)
             input_queue.put(self.message)
 
 
